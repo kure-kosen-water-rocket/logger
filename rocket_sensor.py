@@ -88,7 +88,7 @@ z_oldAccel    = 0
 sensor = Bme280()        #BME280インスタンス化
 
 with open('fly_distance.csv', 'W', newline='') as fly_distance_file:                          #fly_distance.csvファイルを作成
-    fieldnames = ['time','displacement']                                                      #一列目に'time'、二列目に'displacement'
+    fieldnames = ['x_difference','z_difference']                                                      #一列目に'time'、二列目に'displacement'
     write = csv.Dictwriter(fly_distance_file, fieldnames=fieldnames)                          #temperature_file(temperature.csv)にfieldnamesの設定を反映
     writer.writeheader()
 
@@ -119,7 +119,7 @@ while 1:
     x_oldAccel      = x_highpassValue
     x_difference    = abs(((((x_speed * math.cos(y_angle)) + (x_oldSpeed * math.cos(y_angle))) * dt) / 2 + difference)) #変位計算(速度を台形積分する)
     x_oldSpeed      = x_speed
-    #print(z_difference*1000) 　　　　　　　　　　　　　　　　　　　　　　  #変位をmmに変換して表示
+    #print(x_difference*1000) 　　　　　　　　　　　　　　　　　　　　　　  #変位をmmに変換して表示
 
     z_difference    = 0                                                                                                 #変位を初期化　　※ロケット発射時は取り除いておく
     z_lowpassValue  = (x_lowpassValue * filterCoefficient) + (accel_z) * (1 - filterCoefficient)
@@ -133,9 +133,9 @@ while 1:
     
     print("####################################################")
     time += dt                                                          #時間を+0.1して値を返す
-    writer.writerow({'time': 'time', 'displacement': 'displacement'})
+    writer.writerow({'x_difference': 'x_difference', 'z_difference': 'z_difference'})
 
-    if time > 30.0:                                                     #30s後に計測終了
+    if time > 30.0:                                                     #30s
         break
     
     sleep(dt)                                                           #0.1秒周期で繰り返す
