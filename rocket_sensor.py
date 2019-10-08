@@ -63,34 +63,35 @@ def get_accel_data_lsb():              #加速度データ取得
 
 def get_accel_data_g():
     x,y,z = get_accel_data_lsb()
-    x = ((x / 16384.0) *10) + 0.2      # *10=m/sに変換,  +0.x=加速度調整パラメーター
-    y = ((y / 16384.0) *10) -0.07
-    z = ((z / 16384.0) *10) +0.3
+    x = ((x / 16384.0) *10)            # *10 => m/sに変換
+    y = ((y / 16384.0) *10)
+    z = ((z / 16384.0) *10)
     return [x, y, z]
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------
+calculate_time= 30          #計測時間
 dt            = 0.1
-time          = 0
-filterCoefficient = 0.5  #ローパスフィルターの係数(これは環境によって要調整。1に近づけるほど平滑化の度合いが大きくなる。
+time          = 0           #初期タイム
+x_filterCoefficient = 0.01  #ローパスフィルターの係数(これは環境によって要調整。1に近づけるほど平滑化の度合いが大きくなる。
+x_lowpassValue  = 0         #加速度のみの値
+x_highpassValue = 0         #加速度を取り除いた値
+x_speed       = 0           #加速度時から算出した速度
+x_oldSpeed    = 0           #ひとつ前の速度
+x_oldAccel    = 0           #ひとつ前の加速
+x_difference  = 0
 
-x_lowpassValue  = 0
-x_highpassValue = 0
-x_speed       = 0        #加速度時から算出した速度
-x_oldSpeed    = 0        #ひとつ前の速度
-x_oldAccel    = 0        #ひとつ前の加速度
-
+z_filterCoefficient = 0.01
 z_lowpassValue  = 0
 z_highpassValue = 0
 z_speed       = 0
 z_oldSpeed    = 0
 z_oldAccel    = 0
+z_difference  = 0
 
-sensor = Bme280()        #BME280インスタンス化
-
-with open('fly_distance.csv', 'W', newline='') as fly_distance_file:                          #fly_distance.csvファイルを作成
-    fieldnames = ['x_difference','z_difference']                                                      #一列目に'time'、二列目に'displacement'
-    write = csv.Dictwriter(fly_distance_file, fieldnames=fieldnames)                          #temperature_file(temperature.csv)にfieldnamesの設定を反映
-    writer.writeheader()
+with open('fly_distance.csv','w', newline='') as fly_distance_file:                            #'fly_distance.csv'というファイルを作成する
+        fieldnames = ['x_difference','z_difference']                                
+        writer = csv.DictWriter(fly_distance_file, fieldnames=fieldnames)
+        writer.writeheader()
 
 while 1:
     gyro_x,gyro_y,gyro_z = get_gyro_data_deg()                                                #角速度表示
@@ -107,35 +108,39 @@ while 1:
     #print ('z: %06.3f' % accel_z)
     
     y_angle = math.degrees(math.atan2(accel_x , math.sqrt(accel_y**2 + accel_z**2)))          #姿勢角の算出
-    y_angle = 0.995 * (y_angle + gyro_y * dt) + (0.005* accel_y)
+    y_angle = (0.995 * (y_angle + gyro_y * dt) + (0.005* accel_y))
     #print(round(y_angle,0) ,"度")
-    #y_angle = math.radians(y_angle)
+    y_angle = math.radians(y_angle)
     
     x_difference    = 0                                                                                                 #変位を初期化　　※ロケット発射時は取り除いておく
-    x_lowpassValue  = (x_lowpassValue * filterCoefficient) + (accel_x) * (1 - filterCoefficient)
-    x_highpassValue = (accel_x) - x_lowpassValue
-    #print(x_highpassValue)
+    x_lowpassValue  = (x_lowpassValue * x_filterCoefficient) + (accel_x * math.cos(y_angle)) * (1 - x_filterCoefficient)
+    x_highpassValue = (accel_x * math.cos(y_angle)) - x_lowpassValue
     x_speed         = ((x_highpassValue + (x_oldAccel)) * dt) / 2 + (x_speed)                                           #速度計算(加速度を台形積分する)
     x_oldAccel      = x_highpassValue
-    x_difference    = abs(((((x_speed * math.cos(y_angle)) + (x_oldSpeed * math.cos(y_angle))) * dt) / 2 + difference)) #変位計算(速度を台形積分する)
+    x_difference    = ((((x_speed) + (x_oldSpeed)) * dt) / 2 + x_difference)                                            #変位計算(速度を台形積分する) 
     x_oldSpeed      = x_speed
-    #print(x_difference*1000) 　　　　　　　　　　　　　　　　　　　　　　  #変位をmmに変換して表示
+    #print(x_lowpassValue)
+    print("x_highpass",x_highpassValue *1000)
+    print(x_difference* 1000)                                                                                           #変位をmmに変換して表示
 
-    z_difference    = 0                                                                                                 #変位を初期化　　※ロケット発射時は取り除いておく
-    z_lowpassValue  = (x_lowpassValue * filterCoefficient) + (accel_z) * (1 - filterCoefficient)
-    z_highpassValue = (accel_z) - z_lowpassValue
-    #print(z_highpassValue)
+    z_difference = 0                                                                                                    #変位を初期化　　※ロケット発射時は取り除いておく
+    z_lowpassValue  = (z_lowpassValue * z_filterCoefficient) + (accel_z * math.cos(y_angle)) * (1 - z_filterCoefficient)
+    z_highpassValue = (accel_z * math.cos(y_angle)) - z_lowpassValue
     z_speed         = ((z_highpassValue + (z_oldAccel)) * dt) / 2 + (z_speed)                                           #速度計算(加速度を台形積分する)
     z_oldAccel      = z_highpassValue
-    z_difference    = abs(((((z_speed * math.cos(y_angle)) + (z_oldSpeed * math.cos(y_angle))) * dt) / 2 + difference)) #変位計算(速度を台形積分する)
+    z_difference    = ((((z_speed) + (z_oldSpeed)) * dt) / 2 + z_difference)                                            #変位計算(速度を台形積分する)
     z_oldSpeed      = z_speed
-    #print(z_difference*1000) 　　　　　　　　　　　　　　　　　　　　　　  #変位をmmに変換して表示
+    #print(z_lowpassValue)
+    print("z_highpass",z_highpassValue *1000)
+    print(z_difference* 1000)                                                                                           #変位をmmに変換して表示
     
     print("####################################################")
-    time += dt                                                          #時間を+0.1して値を返す
-    writer.writerow({'x_difference': 'x_difference', 'z_difference': 'z_difference'})
-
-    if time > 30.0:                                                     #30s
-        break
     
-    sleep(dt)                                                           #0.1秒周期で繰り返す
+    with open('fly_distance.csv', 'a', newline='') as fly_distance_file:                   
+        writer = csv.DictWriter(fly_distance_file, fieldnames=fieldnames)  
+        writer.writerow({'x_difference':x_difference,'z_difference':z_difference})
+        
+    time += dt                  #時間を+0.1して値を返す
+    if time > calculate_time:   #計測時間
+        break
+    sleep(dt)                   #0.1秒周期で繰り返す
