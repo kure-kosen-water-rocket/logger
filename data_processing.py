@@ -1,5 +1,6 @@
 import pandas as pd
 import csv
+import math
 
 df = pd.read_csv("measurement.csv")
 
@@ -8,6 +9,8 @@ z_old_accel = 0
 x_old_accel = 0
 z_old_speed = 0
 x_old_speed = 0
+dt = 0.01
+fieldnames = ['x_distance', 'z_distance']
 
 for i in range(df.shape[0]):
     z_acceleration = df.iloc[i,2]
@@ -23,7 +26,7 @@ for i in range(df.shape[0]):
     x_s_acceleration = x_m_acceleration * math.cos(y_angle)
 
     z_speed = (((z_s_acceleration + z_old_accel) * dt) /2)
-    X_speed = (((x_s_acceleration + x_old_accel) * dt)/2)
+    x_speed = (((x_s_acceleration + x_old_accel) * dt)/2)
 
     z_distance = (((z_speed + z_old_speed) * dt) / 2)
     x_distance = (((x_speed + x_old_speed) * dt) / 2)
@@ -40,5 +43,5 @@ for i in range(df.shape[0]):
 
     i = i + 1
 
-    if i == 10 :
+    if i == df.shape[0] :
         break
