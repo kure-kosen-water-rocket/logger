@@ -78,7 +78,7 @@ while 1:
      #print(round(y_angle,0) ,"度")
      y_angle = math.radians(y_angle)
 
-     with open('measurement.csv','w', newline='') as measurement_file:
+     with open('measurement.csv','a', newline='') as measurement_file:
         writer = csv.writer(measurement_file,lineterminator='\n')
         writer.writerow([accel_x,accel_y,accel_z,y_angle])
 
