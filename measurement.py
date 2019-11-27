@@ -25,6 +25,7 @@ bus.write_byte_data(DEV_ADDR, PWR_MGMT_1, 0)
 
 def read_byte(adr):
     return bus.read_byte_data(DEV_ADDR, adr)
+
 def read_word(adr):
     high = bus.read_byte_data(DEV_ADDR, adr)
     low = bus.read_byte_data(DEV_ADDR, adr+1)
@@ -33,17 +34,17 @@ def read_word(adr):
 
 def read_word_sensor(adr):
     val = read_word(adr)
-    if (val >= 0x8000):        
+    if (val >= 0x8000):
         return -((65535 - val) + 1)
-    else:                    
+    else:
         return val
-
 
 def get_gyro_data_lsb():               #角速度(ジャイロ)データ取得
     x = read_word_sensor(GYRO_XOUT)
     y = read_word_sensor(GYRO_YOUT)
     z = read_word_sensor(GYRO_ZOUT)
     return [x, y, z]
+
 def get_gyro_data_deg():
     x,y,z = get_gyro_data_lsb()
     x = x / 131.0
@@ -73,11 +74,11 @@ while 1:
      y_angle = math.radians(y_angle)
     
      with open('measurement.csv','w', newline='') as measurement_file:
-     writer = csv.writer(measurement_file,lineterminator='\n')
-     #writer.writerow(["accel_x","accel_y","accel_z","y_angle"])
-     writer.writerow([accel_x,accel_y,accel_z,y_angle])
+        writer = csv.writer(measurement_file,lineterminator='\n')
+        writer.writerow([accel_x,accel_y,accel_z,y_angle])
              
      time += dt                  
      if time > calculate_time:   
-     break
+        break
+
      sleep(dt)

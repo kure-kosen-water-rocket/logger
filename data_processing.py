@@ -40,8 +40,3 @@ for i in range(df.shape[0]):
     with open('fly_distance.csv', 'a', newline='') as fly_distance_file:
         writer = csv.DictWriter(fly_distance_file, fieldnames=fieldnames)
         writer.writerow({'z_distance':z_distance,'x_distance':x_distance})
-
-    i = i + 1
-
-    if i == df.shape[0] :
-        break
