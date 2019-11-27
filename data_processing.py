@@ -16,6 +16,7 @@ for i in range(df.shape[0]):
     z_acceleration = df.iloc[i,2]
     x_acceleration = df.iloc[i,0]
     y_angle = df.iloc[i,3]
+    
     z_g_acceleration = z_acceleration * math.cos(y_angle)
     x_g_acceleration = x_acceleration * math.cos(y_angle)
 
