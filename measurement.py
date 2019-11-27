@@ -57,28 +57,33 @@ def get_accel_data_lsb():              #加速度データ取得
     y = read_word_sensor(ACCEL_YOUT)
     z = read_word_sensor(ACCEL_ZOUT)
     return [x, y, z]
-    
-    get_accel_data_g()
-    
-　　calculate_time= 30         
-　　dt            = 0.1
-　　time          = 0  
-    
+
+def get_accel_data_g():
+    x,y,z = get_accel_data_lsb()
+    x = ((x / 16384.0) *1)
+    y = ((y / 16384.0) *1)
+    z = ((z / 16384.0) *1)
+    return [x, y, z]
+
+calculate_time= 30
+dt            = 0.1
+time          = 0
+
 while 1:
      accel_x,accel_y,accel_z = get_accel_data_g()
-     gyro_x, gyro_y, gyro_z = get_gyro_data_deg() 
-     
+     gyro_x, gyro_y, gyro_z = get_gyro_data_deg()
+
      y_angle = math.degrees(math.atan2(accel_x , math.sqrt(accel_y**2 + accel_z**2)))          #姿勢角の算出
      y_angle = (0.995 * (y_angle + gyro_y * dt) + (0.005* accel_y))
      #print(round(y_angle,0) ,"度")
      y_angle = math.radians(y_angle)
-    
+
      with open('measurement.csv','w', newline='') as measurement_file:
         writer = csv.writer(measurement_file,lineterminator='\n')
         writer.writerow([accel_x,accel_y,accel_z,y_angle])
-             
-     time += dt                  
-     if time > calculate_time:   
+
+     time += dt
+     if time > calculate_time:
         break
 
      sleep(dt)
